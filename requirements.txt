@@ -1,0 +1,10 @@
+async-timeout==4.0.3
+asyncpg==0.29.0
+click==8.1.7
+greenlet==3.0.3
+packaging==24.0
+pathspec==0.12.1
+platformdirs==4.2.0
+SQLAlchemy==2.0.28
+tomli==2.0.1
+typing_extensions==4.10.0
