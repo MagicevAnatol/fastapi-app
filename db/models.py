@@ -1,7 +1,7 @@
 from typing import List
-from sqlalchemy import Column, String, Integer, ForeignKey, Table, ARRAY
+from sqlalchemy import Column, String, Integer, ForeignKey, Table, ARRAY, LargeBinary
 from sqlalchemy.orm import relationship
-from models.init_db import Base
+from db.database import Base
 
 likes_table = Table(
     "likes",
@@ -22,18 +22,12 @@ class User(Base):
     """Модель для хранения информации о пользователях."""
 
     __tablename__ = "users"
-
-    # Уникальный идентификатор пользователя
     id: int = Column(Integer, primary_key=True, index=True, autoincrement=True)
-
-    # API ключ пользователя
     api_key: str = Column(String(), unique=True)
-
-    # Имя пользователя
     name: str = Column(String(length=50))
 
     # Отношение к лайкам пользователя
-    likes = relationship("Tweet", secondary=likes_table, back_populates="users")
+    likes = relationship("Tweet", secondary=likes_table, back_populates="liked_by")
 
     # Отношение к твитам пользователя
     tweets = relationship("Tweet", back_populates="user")
@@ -61,39 +55,18 @@ class Tweet(Base):
     """Модель для хранения информации о твитах."""
 
     __tablename__ = "tweets"
-
-    # Уникальный идентификатор твита
     id: int = Column(Integer, primary_key=True, index=True, autoincrement=True)
-
-    # Текст твита
     tweet_data: str = Column(String(length=10000))
-
-    # Ссылки на медиафайлы в твите
-    tweet_media_ids: List[str] = Column(ARRAY(String(200)), nullable=True)
-
-    # Идентификатор пользователя, создавшего твит
+    tweet_media_ids: List[int] = Column(ARRAY(Integer), nullable=True)
     user_id: int = Column(Integer, ForeignKey("users.id"), index=True)
-
-    # Отношение к пользователю, создавшему твит
     user = relationship("User", back_populates="tweets")
-
-    # Отношение к лайкам твита
-    likes = relationship("User", secondary=likes_table, back_populates="likes")
+    liked_by = relationship("User", secondary=likes_table, back_populates="likes")
 
 
-class Image(Base):
-    """Модель для хранения информации об изображениях."""
+class Media(Base):
+    """Модель для хранения изображений."""
 
-    __tablename__ = "images"
-
-    # Уникальный идентификатор изображения
-    id: int = Column(Integer, primary_key=True, index=True, autoincrement=True)
-
-    # Ссылка на изображение
-    url: str = Column(String(length=200))
-
-    # Идентификатор пользователя, создавшего изображение
-    user_id: int = Column(Integer, ForeignKey("users.id"), nullable=False)
-
-    # Отношение к пользователю, создавшему изображение
-    user = relationship("User", back_populates="images")
+    __tablename__ = "media"
+    id = Column(Integer, primary_key=True, index=True)
+    filename = Column(String)
+    file_data = Column(LargeBinary)

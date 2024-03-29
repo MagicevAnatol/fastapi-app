@@ -5,11 +5,11 @@ services:
     image: postgres:latest
     restart: always
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: clone_twitter_db
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5432:5432"
+      - "${DB_PORT}:${DB_PORT}"
     networks:
       - twitter
 
@@ -21,6 +21,12 @@ services:
     stop_signal: SIGTERM
     ports:
       - 8000:8000
+    environment:
+      DB_HOST: db
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
     depends_on:
       - nginx
     networks:
@@ -30,8 +36,8 @@ services:
     container_name: nginx
     image: nginx
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./static:usr/share/nginx/html
+#      - .nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./static:/usr/share/nginx/html
     restart: always
     ports:
       - 80:80

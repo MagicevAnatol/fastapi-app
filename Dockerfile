@@ -1,15 +1,20 @@
 # Используем базовый образ Python
-FROM python:3.9
+FROM python:3.9-alpine
+# Установка зависимостей
+#RUN apk update && apk add --no-cache \
+#    gcc \
+#    libc-dev \
+#    linux-headers \
+#    musl-dev \
+#    postgresql-dev
 
-# Устанавливаем рабочую директорию внутри контейнера
+# Установка приложения и его зависимостей
 WORKDIR /app
-
-# Копируем зависимости и устанавливаем их
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+COPY requirements.txt /app
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Копируем исходный код приложения внутрь контейнера
-COPY . .
+COPY . /app
 
 # Команда для запуска приложения
-CMD ["python", "main.py"]
+CMD ["uvicorn", "main:app", "--reload"]
