@@ -34,6 +34,6 @@ async def http_exception_handler(request, exc):
         {
             "result": False,
             "error_type": "HTTPException",
-            "error_message": str(exc.detail)
+            "error_message": str(exc.detail),
         }
     )

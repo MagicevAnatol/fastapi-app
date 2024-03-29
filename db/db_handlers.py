@@ -25,10 +25,16 @@ async def save_media(db: AsyncSession, filename: str, file_data: bytes) -> int:
     return media.id
 
 
-async def create_tweet(db: AsyncSession, user_id: int, tweet_data: str,
-                       tweet_media_ids: Optional[List[int]] = None) -> int:
+async def create_tweet(
+    db: AsyncSession,
+    user_id: int,
+    tweet_data: str,
+    tweet_media_ids: Optional[List[int]] = None,
+) -> int:
     tweet_media_ids = tweet_media_ids or []
-    tweet = Tweet(user_id=user_id, tweet_data=tweet_data, tweet_media_ids=tweet_media_ids)
+    tweet = Tweet(
+        user_id=user_id, tweet_data=tweet_data, tweet_media_ids=tweet_media_ids
+    )
     db.add(tweet)
     await db.commit()
     await db.refresh(tweet)
@@ -40,16 +46,16 @@ async def delete_tweet(db: AsyncSession, tweet_id: int, user_id: int) -> None:
     tweet = result.scalar_one_or_none()
 
     if not tweet or tweet.user_id != user_id:
-        raise HTTPException(status_code=403, detail="You are not allowed to delete this tweet")
+        raise HTTPException(
+            status_code=403, detail="You are not allowed to delete this tweet"
+        )
 
     await db.delete(tweet)
     await db.commit()
 
 
 async def like_tweet(db: AsyncSession, tweet_id: int, user_id: int) -> None:
-    await db.execute(
-        likes_table.insert().values(tweet_id=tweet_id, user_id=user_id)
-    )
+    await db.execute(likes_table.insert().values(tweet_id=tweet_id, user_id=user_id))
     await db.commit()
 
 
@@ -63,19 +69,28 @@ async def unlike_tweet(db: AsyncSession, tweet_id: int, user_id: int) -> None:
 
 
 async def is_tweet_owner(db: AsyncSession, tweet_id: int, user_id: int) -> bool:
-    result = await db.execute(select(Tweet).filter(Tweet.id == tweet_id, Tweet.user_id == user_id))
+    result = await db.execute(
+        select(Tweet).filter(Tweet.id == tweet_id, Tweet.user_id == user_id)
+    )
     tweet = result.first()
     return tweet is not None
 
 
 async def get_likes_for_tweet(db: AsyncSession, tweet_id: int) -> List[int]:
-    result = await db.execute(select(likes_table.c.user_id).where(likes_table.c.tweet_id == tweet_id))
+    result = await db.execute(
+        select(likes_table.c.user_id).where(likes_table.c.tweet_id == tweet_id)
+    )
     likes = [user_id for user_id in result.scalars().all()]
     return likes
 
 
 async def get_tweet_feed(db: AsyncSession) -> List[dict]:
-    result = await db.execute(select(Tweet).options(selectinload(Tweet.user)).order_by(Tweet.id.desc()).limit(50))
+    result = await db.execute(
+        select(Tweet)
+        .options(selectinload(Tweet.user))
+        .order_by(Tweet.id.desc())
+        .limit(50)
+    )
     tweets = result.scalars().all()
     tweet_list = []
     for tweet in tweets:
@@ -91,11 +106,8 @@ async def get_tweet_feed(db: AsyncSession) -> List[dict]:
             "id": tweet.id,
             "content": tweet.tweet_data,
             "attachments": attachments,
-            "author": {
-                "id": tweet.user.id,
-                "name": tweet.user.name
-            },
-            "likes": likes
+            "author": {"id": tweet.user.id, "name": tweet.user.name},
+            "likes": likes,
         }
         tweet_list.append(tweet_dict)
 
@@ -110,15 +122,27 @@ async def get_media_handler(db: AsyncSession, media_id: int):
 
 async def get_followers(user_id: int, db: AsyncSession) -> List[dict]:
     result = await db.execute(
-        select(User).join(followers, User.id == followers.c.follower_id).where(followers.c.followed_id == user_id))
-    followers_list = [{"id": follower.id, "name": follower.name} for follower in result.scalars().all()]
+        select(User)
+        .join(followers, User.id == followers.c.follower_id)
+        .where(followers.c.followed_id == user_id)
+    )
+    followers_list = [
+        {"id": follower.id, "name": follower.name}
+        for follower in result.scalars().all()
+    ]
     return followers_list
 
 
 async def get_following(user_id: int, db: AsyncSession) -> List[dict]:
     result = await db.execute(
-        select(User).join(followers, User.id == followers.c.followed_id).where(followers.c.follower_id == user_id))
-    following_list = [{"id": following.id, "name": following.name} for following in result.scalars().all()]
+        select(User)
+        .join(followers, User.id == followers.c.followed_id)
+        .where(followers.c.follower_id == user_id)
+    )
+    following_list = [
+        {"id": following.id, "name": following.name}
+        for following in result.scalars().all()
+    ]
     return following_list
 
 
@@ -129,7 +153,9 @@ async def get_user_by_id(user_id: int, db: AsyncSession) -> User:
 
 # Функция для добавления подписки на пользователя
 async def follow_user(follower_id: int, followed_id: int, db: AsyncSession) -> bool:
-    new_follow = followers.insert().values(follower_id=follower_id, followed_id=followed_id)
+    new_follow = followers.insert().values(
+        follower_id=follower_id, followed_id=followed_id
+    )
     try:
         await db.execute(new_follow)
         await db.commit()
@@ -143,8 +169,8 @@ async def follow_user(follower_id: int, followed_id: int, db: AsyncSession) -> b
 # Функция для удаления подписки на пользователя
 async def unfollow_user(follower_id: int, followed_id: int, db: AsyncSession) -> bool:
     unfollow = followers.delete().where(
-        (followers.c.follower_id == follower_id) &
-        (followers.c.followed_id == followed_id)
+        (followers.c.follower_id == follower_id)
+        & (followers.c.followed_id == followed_id)
     )
     result = await db.execute(unfollow)
     if result.rowcount > 0:
