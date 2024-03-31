@@ -9,6 +9,19 @@ from .models import Media, Tweet, User, likes_table, followers
 
 
 async def get_user_by_api(api_key: str, db: AsyncSession) -> User:
+    """
+    Получает пользователя по API ключу.
+
+    Args:
+        api_key (str): API ключ пользователя для поиска.
+        db (AsyncSession): Асинхронная сессия базы данных.
+
+    Returns:
+        User: Объект пользователя, если найден.
+
+    Raises:
+        HTTPException: Если пользователь не найден.
+    """
     try:
         result = await db.execute(select(User).filter(User.api_key == api_key))
         user = result.scalar_one()
@@ -18,6 +31,17 @@ async def get_user_by_api(api_key: str, db: AsyncSession) -> User:
 
 
 async def save_media(db: AsyncSession, filename: str, file_data: bytes) -> int:
+    """
+    Сохраняет медиафайл в базу данных.
+
+    Args:
+        db (AsyncSession): Асинхронная сессия базы данных.
+        filename (str): Имя файла.
+        file_data (bytes): Данные файла.
+
+    Returns:
+        int: Идентификатор сохраненного медиафайла.
+    """
     media = Media(filename=filename, file_data=file_data)
     db.add(media)
     await db.commit()
@@ -31,6 +55,18 @@ async def create_tweet(
     tweet_data: str,
     tweet_media_ids: Optional[List[int]] = None,
 ) -> int:
+    """
+    Создает новый твит.
+
+    Args:
+        db (AsyncSession): Асинхронная сессия базы данных.
+        user_id (int): Идентификатор пользователя.
+        tweet_data (str): Текст твита.
+        tweet_media_ids (Optional[List[int]]): Список идентификаторов медиафайлов.
+
+    Returns:
+        int: Идентификатор созданного твита.
+    """
     tweet_media_ids = tweet_media_ids or []
     tweet = Tweet(
         user_id=user_id, tweet_data=tweet_data, tweet_media_ids=tweet_media_ids
@@ -42,6 +78,17 @@ async def create_tweet(
 
 
 async def delete_tweet(db: AsyncSession, tweet_id: int, user_id: int) -> None:
+    """
+    Удаляет твит.
+
+    Args:
+        db (AsyncSession): Асинхронная сессия базы данных.
+        tweet_id (int): Идентификатор твита.
+        user_id (int): Идентификатор пользователя.
+
+    Raises:
+        HTTPException: Если пользователь не имеет права удалять твит.
+    """
     result = await db.execute(select(Tweet).filter(Tweet.id == tweet_id))
     tweet = result.scalar_one_or_none()
 
@@ -55,11 +102,27 @@ async def delete_tweet(db: AsyncSession, tweet_id: int, user_id: int) -> None:
 
 
 async def like_tweet(db: AsyncSession, tweet_id: int, user_id: int) -> None:
+    """
+    Добавляет лайк твиту.
+
+    Args:
+        db (AsyncSession): Асинхронная сессия базы данных.
+        tweet_id (int): Идентификатор твита.
+        user_id (int): Идентификатор пользователя.
+    """
     await db.execute(likes_table.insert().values(tweet_id=tweet_id, user_id=user_id))
     await db.commit()
 
 
 async def unlike_tweet(db: AsyncSession, tweet_id: int, user_id: int) -> None:
+    """
+    Удаляет лайк с твита.
+
+    Args:
+        db (AsyncSession): Асинхронная сессия базы данных.
+        tweet_id (int): Идентификатор твита.
+        user_id (int): Идентификатор пользователя.
+    """
     await db.execute(
         likes_table.delete().where(
             (likes_table.c.tweet_id == tweet_id) & (likes_table.c.user_id == user_id)
@@ -69,6 +132,17 @@ async def unlike_tweet(db: AsyncSession, tweet_id: int, user_id: int) -> None:
 
 
 async def is_tweet_owner(db: AsyncSession, tweet_id: int, user_id: int) -> bool:
+    """
+    Проверяет, является ли пользователь владельцем твита.
+
+    Args:
+        db (AsyncSession): Асинхронная сессия базы данных.
+        tweet_id (int): Идентификатор твита.
+        user_id (int): Идентификатор пользователя.
+
+    Returns:
+        bool: Возвращает True, если пользователь является владельцем твита, иначе False.
+    """
     result = await db.execute(
         select(Tweet).filter(Tweet.id == tweet_id, Tweet.user_id == user_id)
     )
@@ -77,6 +151,16 @@ async def is_tweet_owner(db: AsyncSession, tweet_id: int, user_id: int) -> bool:
 
 
 async def get_likes_for_tweet(db: AsyncSession, tweet_id: int) -> List[int]:
+    """
+    Получает список идентификаторов пользователей, которые поставили лайк твиту.
+
+    Args:
+        db (AsyncSession): Асинхронная сессия базы данных.
+        tweet_id (int): Идентификатор твита.
+
+    Returns:
+        List[int]: Список идентификаторов пользователей.
+    """
     result = await db.execute(
         select(likes_table.c.user_id).where(likes_table.c.tweet_id == tweet_id)
     )
@@ -85,6 +169,15 @@ async def get_likes_for_tweet(db: AsyncSession, tweet_id: int) -> List[int]:
 
 
 async def get_tweet_feed(db: AsyncSession) -> List[dict]:
+    """
+    Получает ленту твитов с информацией о лайках и вложениях.
+
+    Args:
+        db (AsyncSession): Асинхронная сессия базы данных.
+
+    Returns:
+        List[dict]: Список словарей, содержащих информацию о твитах.
+    """
     result = await db.execute(
         select(Tweet)
         .options(selectinload(Tweet.user))
@@ -107,7 +200,7 @@ async def get_tweet_feed(db: AsyncSession) -> List[dict]:
             "content": tweet.tweet_data,
             "attachments": attachments,
             "author": {"id": tweet.user.id, "name": tweet.user.name},
-            "likes": likes,
+            "likes": len(likes),
         }
         tweet_list.append(tweet_dict)
 
@@ -115,12 +208,32 @@ async def get_tweet_feed(db: AsyncSession) -> List[dict]:
 
 
 async def get_media_handler(db: AsyncSession, media_id: int):
+    """
+    Получает медиафайл по идентификатору.
+
+    Args:
+        db (AsyncSession): Асинхронная сессия базы данных.
+        media_id (int): Идентификатор медиафайла.
+
+    Returns:
+        Media: Объект медиафайла, если он найден, иначе None.
+    """
     result = await db.execute(select(Media).filter(Media.id == media_id))
     media = result.scalar_one_or_none()
     return media
 
 
 async def get_followers(user_id: int, db: AsyncSession) -> List[dict]:
+    """
+    Получает список подписчиков пользователя.
+
+    Args:
+        user_id (int): Идентификатор пользователя.
+        db (AsyncSession): Асинхронная сессия базы данных.
+
+    Returns:
+        List[dict]: Список словарей, содержащих идентификаторы и имена подписчиков.
+    """
     result = await db.execute(
         select(User)
         .join(followers, User.id == followers.c.follower_id)
@@ -134,6 +247,16 @@ async def get_followers(user_id: int, db: AsyncSession) -> List[dict]:
 
 
 async def get_following(user_id: int, db: AsyncSession) -> List[dict]:
+    """
+    Получает список пользователей, на которых подписан пользователь.
+
+    Args:
+        user_id (int): Идентификатор пользователя.
+        db (AsyncSession): Асинхронная сессия базы данных.
+
+    Returns:
+        List[dict]: Список словарей, содержащих идентификаторы и имена подписок.
+    """
     result = await db.execute(
         select(User)
         .join(followers, User.id == followers.c.followed_id)
@@ -147,12 +270,33 @@ async def get_following(user_id: int, db: AsyncSession) -> List[dict]:
 
 
 async def get_user_by_id(user_id: int, db: AsyncSession) -> User:
+    """
+    Получает пользователя по идентификатору.
+
+    Args:
+        user_id (int): Идентификатор пользователя.
+        db (AsyncSession): Асинхронная сессия базы данных.
+
+    Returns:
+        User: Объект пользователя, если он найден, иначе None.
+    """
     result = await db.execute(select(User).where(User.id == user_id))
     return result.scalar_one_or_none()
 
 
 # Функция для добавления подписки на пользователя
 async def follow_user(follower_id: int, followed_id: int, db: AsyncSession) -> bool:
+    """
+    Добавляет подписку пользователя на другого пользователя.
+
+    Args:
+        follower_id (int): Идентификатор пользователя, который подписывается.
+        followed_id (int): Идентификатор пользователя, на которого подписываются.
+        db (AsyncSession): Асинхронная сессия базы данных.
+
+    Returns:
+        bool: Возвращает True, если подписка успешно добавлена, иначе False.
+    """
     new_follow = followers.insert().values(
         follower_id=follower_id, followed_id=followed_id
     )
@@ -168,6 +312,17 @@ async def follow_user(follower_id: int, followed_id: int, db: AsyncSession) -> b
 
 # Функция для удаления подписки на пользователя
 async def unfollow_user(follower_id: int, followed_id: int, db: AsyncSession) -> bool:
+    """
+    Удаляет подписку пользователя на другого пользователя.
+
+    Args:
+        follower_id (int): Идентификатор пользователя, который отписывается.
+        followed_id (int): Идентификатор пользователя, от которого отписываются.
+        db (AsyncSession): Асинхронная сессия базы данных.
+
+    Returns:
+        bool: Возвращает True, если подписка успешно удалена, иначе False.
+    """
     unfollow = followers.delete().where(
         (followers.c.follower_id == follower_id)
         & (followers.c.followed_id == followed_id)
@@ -183,13 +338,25 @@ async def unfollow_user(follower_id: int, followed_id: int, db: AsyncSession) ->
 
 
 async def create_initial_data(session: AsyncSession):
+    """
+     Создает начальные данные в базе данных, включая пользователей, твиты, медиафайлы,
+     подписчиков и лайки для тестирования.
+
+    Эта функция создает начальный набор пользователей, твитов и медиафайлов,
+    если в базе данных еще нет данных. Если данные уже существуют, функция
+    прерывает свою работу.
+
+    Args:
+        session (AsyncSession): Асинхронная сессия базы данных для выполнения операций.
+
+    """
     # Проверка на наличие данных
     existing_user = await session.execute(select(User))
     if existing_user.scalars().first():
         print("База данных уже содержит данные. Процесс инициализации прерван.")
         return
 
-        # Создаем пользователей
+    # Создаем пользователей
     user1 = User(name="User1", api_key="test_1")
     user2 = User(name="User2", api_key="test_2")
     session.add(user1)
@@ -228,3 +395,26 @@ async def create_initial_data(session: AsyncSession):
     tweet2.tweet_media_ids = [media2.id]
     tweet3.tweet_media_ids = [media3.id]
     await session.commit()
+
+    # Добавляем подписчиков
+    user1_follow_user2 = followers.insert().values(
+        follower_id=user1.id, followed_id=user2.id
+    )
+    user2_follow_user1 = followers.insert().values(
+        follower_id=user2.id, followed_id=user1.id
+    )
+    # Выполняем запросы на добавление подписчиков
+    await session.execute(user1_follow_user2)
+    await session.execute(user2_follow_user1)
+    await session.commit()
+
+    # Добавляем лайки на твитах
+    like1 = likes_table.insert().values(tweet_id=tweet1.id, user_id=user2.id)
+    like2 = likes_table.insert().values(tweet_id=tweet2.id, user_id=user1.id)
+    like3 = likes_table.insert().values(tweet_id=tweet3.id, user_id=user2.id)
+    # Выполняем запросы на добавление лайков
+    await session.execute(like1)
+    await session.execute(like2)
+    await session.execute(like3)
+    await session.commit()
+    print("Начальные данные успешно созданы.")

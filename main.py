@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
+from httpx import AsyncClient, ASGITransport
 from starlette.staticfiles import StaticFiles
 
 from db.database import init_db, async_session
@@ -9,7 +10,7 @@ from routes.users_routes import router as users_routes
 from routes.medias_routes import router as medias_routes
 
 app = FastAPI()
-
+client = AsyncClient(transport=ASGITransport(app=app))
 app.include_router(tweets_routes)
 app.include_router(users_routes)
 app.include_router(medias_routes)

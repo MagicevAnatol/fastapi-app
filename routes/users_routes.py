@@ -3,13 +3,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from db import db_handlers
 from db.db_handlers import get_user_by_api
-from schemas.schemas import get_db, api_key_dependency
+from schemas.responses import UserResponseModel
+from .dependencies import get_db, api_key_dependency
 
 router = APIRouter(prefix="/api/users")
 
 
-# Пользователь видит свой профиль.
-@router.get("/me", tags=["users"])
+@router.get(
+    "/me",
+    response_model=UserResponseModel,
+    tags=["users"],
+    summary="Получить текущего пользователя",
+    description="Получает профиль текущего пользователя, используя предоставленный API ключ.",
+)
 async def get_current_user(
     api_key: str = Depends(api_key_dependency), db: AsyncSession = Depends(get_db)
 ):
@@ -17,7 +23,7 @@ async def get_current_user(
     followers = await db_handlers.get_followers(user.id, db)
     following = await db_handlers.get_following(user.id, db)
     return {
-        "result": "true",
+        "result": True,
         "user": {
             "id": user.id,
             "name": user.name,
@@ -27,8 +33,13 @@ async def get_current_user(
     }
 
 
-# Отображение профиля по ID
-@router.get("/{user_id}", tags=["users"])
+@router.get(
+    "/{user_id}",
+    response_model=UserResponseModel,
+    tags=["users"],
+    summary="Получить профиль пользователя",
+    description="Отображает профиль пользователя по его уникальному идентификатору.",
+)
 async def get_user_profile(user_id: int, db: AsyncSession = Depends(get_db)):
     user = await db_handlers.get_user_by_id(user_id, db)
     if not user:
@@ -36,7 +47,7 @@ async def get_user_profile(user_id: int, db: AsyncSession = Depends(get_db)):
     followers = await db_handlers.get_followers(user_id, db)
     following = await db_handlers.get_following(user_id, db)
     return {
-        "result": "true",
+        "result": True,
         "user": {
             "id": user.id,
             "name": user.name,
@@ -46,8 +57,12 @@ async def get_user_profile(user_id: int, db: AsyncSession = Depends(get_db)):
     }
 
 
-# Пользователь может зафоловить другого пользователя
-@router.post("/{followed_id}/follow", tags=["users"])
+@router.post(
+    "/{followed_id}/follow",
+    tags=["users"],
+    summary="Подписаться на пользователя",
+    description="Позволяет текущему пользователю подписаться на другого пользователя по идентификатору.",
+)
 async def follow_user(
     followed_id: int,
     api_key: str = Depends(api_key_dependency),
@@ -58,8 +73,12 @@ async def follow_user(
     return {"result": success}
 
 
-# Пользователь может убрать подписку на другого пользователя
-@router.delete("/{followed_id}/follow", tags=["users"])
+@router.delete(
+    "/{followed_id}/follow",
+    tags=["users"],
+    summary="Отписаться от пользователя",
+    description="Позволяет текущему пользователю отписаться от другого пользователя по идентификатору.",
+)
 async def unfollow_user(
     followed_id: int,
     api_key: str = Depends(api_key_dependency),
