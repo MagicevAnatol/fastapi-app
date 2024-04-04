@@ -33,7 +33,7 @@ async def startup_event():
 async def http_exception_handler(request, exc):
     return JSONResponse(
         {
-            "result": False,
+            "result": "false",
             "error_type": "HTTPException",
             "error_message": str(exc.detail),
         }

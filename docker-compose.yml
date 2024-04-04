@@ -11,7 +11,7 @@ services:
     ports:
       - "${DB_PORT}:${DB_PORT}"
     networks:
-      - twitter
+      - twitter_network
 
   app:
     container_name: fast_api
@@ -20,7 +20,7 @@ services:
       dockerfile: Dockerfile
     stop_signal: SIGTERM
     ports:
-      - 8000:8000
+      - "8000:8000"
     environment:
       DB_HOST: db
       DB_PORT: ${DB_PORT}
@@ -28,9 +28,9 @@ services:
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
     depends_on:
-      - nginx
+      - db
     networks:
-      - twitter
+      - twitter_network
 
   nginx:
     container_name: nginx
@@ -40,11 +40,12 @@ services:
       - ./static:/usr/share/nginx/html
     restart: always
     ports:
-      - 80:80
+      - "80:80"
+    depends_on:
+      - app
     networks:
-      - twitter
+      - twitter_network
 
 networks:
-  twitter:
-    name: twitter
+  twitter_network:
     driver: bridge

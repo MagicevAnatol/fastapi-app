@@ -1,19 +1,24 @@
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl
 
 
-class UserModel(BaseModel):
+class AuthorModel(BaseModel):
     id: int
+    name: str
+
+
+class LikeModel(BaseModel):
+    user_id: int
     name: str
 
 
 class TweetModel(BaseModel):
     id: int
     content: str
-    attachments: List[str]
-    author: UserModel
-    likes: int
+    attachments: Optional[List[str]] = []
+    author: AuthorModel
+    likes: List[LikeModel]
 
 
 class TweetsResponseModel(BaseModel):
@@ -24,6 +29,11 @@ class TweetsResponseModel(BaseModel):
 class TweetResponseModel(BaseModel):
     result: bool
     tweet_id: int
+
+
+class UserModel(BaseModel):
+    id: int
+    name: str
 
 
 class UserProfile(BaseModel):

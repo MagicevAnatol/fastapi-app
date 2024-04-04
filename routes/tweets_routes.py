@@ -46,23 +46,16 @@ async def create_tweet(
 
 @router.delete(
     "/{tweet_id}",
-    response_model=TweetResponseModel,
     tags=["tweets"],
     summary="Удалить твит",
     description="Удаляет твит по его идентификатору, если пользователь является владельцем.",
 )
-async def delete_tweet(
+async def delete_tweet_route(
     tweet_id: int,
     api_key: str = Depends(api_key_dependency),
     db: AsyncSession = Depends(get_db),
 ):
     user = await db_handlers.get_user_by_api(api_key, db)
-    # Проверка принадлежности твита
-    if not db_handlers.is_tweet_owner(db, tweet_id, user.id):
-        raise HTTPException(
-            status_code=403, detail="You are not allowed to delete this tweet"
-        )
-    # Удаление твита
     await db_handlers.delete_tweet(db, tweet_id, user.id)
     return {"result": True}
 

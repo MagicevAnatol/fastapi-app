@@ -23,7 +23,7 @@ async def get_current_user(
     followers = await db_handlers.get_followers(user.id, db)
     following = await db_handlers.get_following(user.id, db)
     return {
-        "result": True,
+        "result": "true",
         "user": {
             "id": user.id,
             "name": user.name,
@@ -47,7 +47,7 @@ async def get_user_profile(user_id: int, db: AsyncSession = Depends(get_db)):
     followers = await db_handlers.get_followers(user_id, db)
     following = await db_handlers.get_following(user_id, db)
     return {
-        "result": True,
+        "result": "true",
         "user": {
             "id": user.id,
             "name": user.name,

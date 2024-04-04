@@ -68,6 +68,7 @@ async def create_tweet(
         int: Идентификатор созданного твита.
     """
     tweet_media_ids = tweet_media_ids or []
+    print("Поступающие айди изображений", tweet_media_ids)
     tweet = Tweet(
         user_id=user_id, tweet_data=tweet_data, tweet_media_ids=tweet_media_ids
     )
@@ -150,21 +151,24 @@ async def is_tweet_owner(db: AsyncSession, tweet_id: int, user_id: int) -> bool:
     return tweet is not None
 
 
-async def get_likes_for_tweet(db: AsyncSession, tweet_id: int) -> List[int]:
+async def get_likes_for_tweet(db: AsyncSession, tweet_id: int) -> List[dict]:
     """
-    Получает список идентификаторов пользователей, которые поставили лайк твиту.
+    Получает список пользователей, которые поставили лайк твиту.
 
     Args:
         db (AsyncSession): Асинхронная сессия базы данных.
         tweet_id (int): Идентификатор твита.
 
     Returns:
-        List[int]: Список идентификаторов пользователей.
+        List[dict]: Список словарей, содержащих информацию о пользователях.
     """
     result = await db.execute(
-        select(likes_table.c.user_id).where(likes_table.c.tweet_id == tweet_id)
+        select(User.id, User.name)
+        .select_from(likes_table)
+        .join(User, User.id == likes_table.c.user_id)
+        .where(likes_table.c.tweet_id == tweet_id)
     )
-    likes = [user_id for user_id in result.scalars().all()]
+    likes = [{"user_id": user_id, "name": name} for (user_id, name) in result]
     return likes
 
 
@@ -200,14 +204,14 @@ async def get_tweet_feed(db: AsyncSession) -> List[dict]:
             "content": tweet.tweet_data,
             "attachments": attachments,
             "author": {"id": tweet.user.id, "name": tweet.user.name},
-            "likes": len(likes),
+            "likes": [{"user_id": like["user_id"], "name": like["name"]} for like in likes],
         }
         tweet_list.append(tweet_dict)
 
     return tweet_list
 
 
-async def get_media_handler(db: AsyncSession, media_id: int):
+async def get_media_handler(db: AsyncSession, media_id: int) -> Media:
     """
     Получает медиафайл по идентификатору.
 
@@ -337,7 +341,7 @@ async def unfollow_user(follower_id: int, followed_id: int, db: AsyncSession) ->
         return False
 
 
-async def create_initial_data(session: AsyncSession):
+async def create_initial_data(session: AsyncSession) -> None:
     """
      Создает начальные данные в базе данных, включая пользователей, твиты, медиафайлы,
      подписчиков и лайки для тестирования.
@@ -357,7 +361,7 @@ async def create_initial_data(session: AsyncSession):
         return
 
     # Создаем пользователей
-    user1 = User(name="User1", api_key="test_1")
+    user1 = User(name="test", api_key="test")
     user2 = User(name="User2", api_key="test_2")
     session.add(user1)
     session.add(user2)
