@@ -14,6 +14,16 @@ PostgreSQL - мощная реляционная база данных с отк
 Nginx - это высокопроизводительный веб-сервер и прокси-сервер
 
 ## Использование
+Для работы понадобится файл .env в котором будут окружения которые нужно добавить перед запуском контейнеров.
+```.env
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=clone_tweeter_db
+DB_USER=postgres
+DB_PASS=postgres
+SECRET_KEY=YourSecretKey
+
+```
 Запустите docker-compose:
 ```bash
 docker compose up -d
