@@ -1,10 +1,14 @@
 from typing import List, Optional
 
 from fastapi import HTTPException
+from sqlalchemy import LargeBinary
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
+from sqlalchemy_utils.types.encrypted.encrypted_type import AesEngine, EncryptedType
+
+from .database import settings
 from .models import Media, Tweet, User, likes_table, followers
 
 
@@ -22,8 +26,10 @@ async def get_user_by_api(api_key: str, db: AsyncSession) -> User:
     Raises:
         HTTPException: Если пользователь не найден.
     """
+    encrypted_api_key = EncryptedType(LargeBinary,settings.SECRET_KEY, AesEngine,
+                                        'pkcs5').process_bind_param(api_key, None)
     try:
-        result = await db.execute(select(User).filter(User.api_key == api_key))
+        result = await db.execute(select(User).filter(User.api_key == encrypted_api_key))
         user = result.scalar_one()
         return user
     except NoResultFound:
@@ -68,7 +74,6 @@ async def create_tweet(
         int: Идентификатор созданного твита.
     """
     tweet_media_ids = tweet_media_ids or []
-    print("Поступающие айди изображений", tweet_media_ids)
     tweet = Tweet(
         user_id=user_id, tweet_data=tweet_data, tweet_media_ids=tweet_media_ids
     )
@@ -360,9 +365,13 @@ async def create_initial_data(session: AsyncSession) -> None:
         print("База данных уже содержит данные. Процесс инициализации прерван.")
         return
 
-    # Создаем пользователей
-    user1 = User(name="test", api_key="test")
-    user2 = User(name="User2", api_key="test_2")
+        # Создаем пользователей
+    encrypted_api_key1 = EncryptedType(LargeBinary, settings.SECRET_KEY, AesEngine, 'pkcs5').process_bind_param(
+        "test", None)
+    encrypted_api_key2 = EncryptedType(LargeBinary, settings.SECRET_KEY, AesEngine, 'pkcs5').process_bind_param(
+        "test_2", None)
+    user1 = User(name="test", api_key=encrypted_api_key1)
+    user2 = User(name="User2", api_key=encrypted_api_key2)
     session.add(user1)
     session.add(user2)
     await session.commit()

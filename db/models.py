@@ -1,7 +1,10 @@
 from typing import List
-from sqlalchemy import Column, String, Integer, ForeignKey, Table, ARRAY, LargeBinary
+from sqlalchemy import Column, String, Integer, ForeignKey, Table, ARRAY, LargeBinary, TypeDecorator, BLOB
 from sqlalchemy.orm import relationship
-from db.database import Base
+from sqlalchemy_utils import EncryptedType
+from sqlalchemy_utils.types.encrypted.encrypted_type import AesEngine
+
+from db.database import Base, settings
 
 likes_table = Table(
     "likes",
@@ -18,12 +21,13 @@ followers = Table(
 )
 
 
+
 class User(Base):
     """Модель для хранения информации о пользователях."""
 
     __tablename__ = "users"
     id: int = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    api_key: str = Column(String(), unique=True)
+    api_key: BLOB = Column(EncryptedType(String, settings.SECRET_KEY, AesEngine, 'pkcs5'), unique=True)
     name: str = Column(String(length=50))
 
     # Отношение к лайкам пользователя
