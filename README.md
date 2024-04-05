@@ -44,6 +44,10 @@ docker compose up -d
 pip install pytest
 ```
 Проведение тестов:
+Требуется создание временной базы данных в докере на порту 5433
+```bash
+docker run --name postgres-test -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=clone_tweeter_db_test -p 5433:5432 -d postgres
+```
 ```bash
 pytest tests/
 ```
