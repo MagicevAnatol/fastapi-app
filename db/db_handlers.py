@@ -26,10 +26,13 @@ async def get_user_by_api(api_key: str, db: AsyncSession) -> User:
     Raises:
         HTTPException: Если пользователь не найден.
     """
-    encrypted_api_key = EncryptedType(LargeBinary,settings.SECRET_KEY, AesEngine,
-                                        'pkcs5').process_bind_param(api_key, None)
+    encrypted_api_key = EncryptedType(
+        LargeBinary, settings.SECRET_KEY, AesEngine, "pkcs5"
+    ).process_bind_param(api_key, None)
     try:
-        result = await db.execute(select(User).filter(User.api_key == encrypted_api_key))
+        result = await db.execute(
+            select(User).filter(User.api_key == encrypted_api_key)
+        )
         user = result.scalar_one()
         return user
     except NoResultFound:
@@ -209,7 +212,9 @@ async def get_tweet_feed(db: AsyncSession) -> List[dict]:
             "content": tweet.tweet_data,
             "attachments": attachments,
             "author": {"id": tweet.user.id, "name": tweet.user.name},
-            "likes": [{"user_id": like["user_id"], "name": like["name"]} for like in likes],
+            "likes": [
+                {"user_id": like["user_id"], "name": like["name"]} for like in likes
+            ],
         }
         tweet_list.append(tweet_dict)
 
@@ -366,10 +371,12 @@ async def create_initial_data(session: AsyncSession) -> None:
         return
 
         # Создаем пользователей
-    encrypted_api_key1 = EncryptedType(LargeBinary, settings.SECRET_KEY, AesEngine, 'pkcs5').process_bind_param(
-        "test", None)
-    encrypted_api_key2 = EncryptedType(LargeBinary, settings.SECRET_KEY, AesEngine, 'pkcs5').process_bind_param(
-        "test_2", None)
+    encrypted_api_key1 = EncryptedType(
+        LargeBinary, settings.SECRET_KEY, AesEngine, "pkcs5"
+    ).process_bind_param("test", None)
+    encrypted_api_key2 = EncryptedType(
+        LargeBinary, settings.SECRET_KEY, AesEngine, "pkcs5"
+    ).process_bind_param("test_2", None)
     user1 = User(name="test", api_key=encrypted_api_key1)
     user2 = User(name="User2", api_key=encrypted_api_key2)
     session.add(user1)

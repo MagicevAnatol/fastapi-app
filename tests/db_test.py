@@ -1,8 +1,17 @@
 from functools import lru_cache
 from pathlib import Path
 from typing import List, AsyncGenerator
-from sqlalchemy import Column, String, Integer, ForeignKey, Table, ARRAY, LargeBinary, select, \
-    NullPool
+from sqlalchemy import (
+    Column,
+    String,
+    Integer,
+    ForeignKey,
+    Table,
+    ARRAY,
+    LargeBinary,
+    select,
+    NullPool,
+)
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import relationship, sessionmaker, declarative_base
 import sys
@@ -20,8 +29,10 @@ def get_settings():
 
 settings = get_settings()
 
-DATABASE_URL = (f"postgresql+asyncpg://{settings.DB_USER}:{settings.DB_PASS}@"
-                f"{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}")
+DATABASE_URL = (
+    f"postgresql+asyncpg://{settings.DB_USER}:{settings.DB_PASS}@"
+    f"{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
+)
 
 engine_test = create_async_engine(DATABASE_URL, poolclass=NullPool)
 
@@ -33,7 +44,6 @@ async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
 
 app.dependency_overrides[get_db] = override_get_db
 
-# Создание асинхронной сессии
 async_session_maker = sessionmaker(
     bind=engine_test, class_=AsyncSession, expire_on_commit=False, autoflush=False
 )

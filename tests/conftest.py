@@ -2,23 +2,17 @@ import asyncio
 import sys
 from pathlib import Path
 from typing import AsyncGenerator
-import time
-
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
 
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import NullPool
+from sqlalchemy.ext.asyncio import create_async_engine
+
 from db_test import Base, DATABASE_URL, async_session_maker, create_initial_data
 from schemas.schemas import TweetCreateRequest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from main import app
-
-from routes.dependencies import get_db
-from db.database import settings
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -38,7 +32,7 @@ async def async_db_session():
         await conn.run_sync(Base.metadata.drop_all)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def event_loop(request):
     """Create an instance of the default event loop for each test case."""
     loop = asyncio.get_event_loop_policy().new_event_loop()
@@ -46,11 +40,13 @@ def event_loop(request):
     loop.close()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 async def created_tweet_id():
     tweet_request = TweetCreateRequest(tweet_data="Test tweet", tweet_media_ids=[])
     async with AsyncClient(app=app, base_url="http://test") as ac:
-        response = await ac.post("/api/tweets/", headers={"api-key": "test"}, json=tweet_request.dict())
+        response = await ac.post(
+            "/api/tweets/", headers={"api-key": "test"}, json=tweet_request.dict()
+        )
     return response.json()["tweet_id"]
 
 

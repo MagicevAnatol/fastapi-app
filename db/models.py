@@ -1,5 +1,14 @@
 from typing import List
-from sqlalchemy import Column, String, Integer, ForeignKey, Table, ARRAY, LargeBinary, BLOB
+from sqlalchemy import (
+    Column,
+    String,
+    Integer,
+    ForeignKey,
+    Table,
+    ARRAY,
+    LargeBinary,
+    BLOB,
+)
 from sqlalchemy.orm import relationship
 from sqlalchemy_utils import EncryptedType
 from sqlalchemy_utils.types.encrypted.encrypted_type import AesEngine
@@ -26,7 +35,9 @@ class User(Base):
 
     __tablename__ = "users"
     id: int = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    api_key: BLOB = Column(EncryptedType(String, settings.SECRET_KEY, AesEngine, 'pkcs5'), unique=True)
+    api_key: BLOB = Column(
+        EncryptedType(String, settings.SECRET_KEY, AesEngine, "pkcs5"), unique=True
+    )
     name: str = Column(String(length=50))
 
     # Отношение к лайкам пользователя
