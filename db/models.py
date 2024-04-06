@@ -1,5 +1,5 @@
 from typing import List
-from sqlalchemy import Column, String, Integer, ForeignKey, Table, ARRAY, LargeBinary, TypeDecorator, BLOB
+from sqlalchemy import Column, String, Integer, ForeignKey, Table, ARRAY, LargeBinary, BLOB
 from sqlalchemy.orm import relationship
 from sqlalchemy_utils import EncryptedType
 from sqlalchemy_utils.types.encrypted.encrypted_type import AesEngine

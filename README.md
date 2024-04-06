@@ -41,13 +41,14 @@ docker compose up -d
 ## Тестирование
 Для тестирования проекта используется pytest
 ```bash
-pip install pytest
+pip install pytest pytest-asyncio
 ```
 Проведение тестов:
-Требуется создание временной базы данных в докере на порту 5433
+Используется запущенная база данных в контейнере.
 ```bash
-docker run --name postgres-test -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=clone_tweeter_db_test -p 5433:5432 -d postgres
+docker compose up db -d
 ```
+Запускаем тесты:
 ```bash
-pytest tests/
+pytest tests/ -v
 ```

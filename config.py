@@ -1,8 +1,5 @@
 import os
-from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
-load_dotenv()
-
 
 class Settings(BaseSettings):
     DB_HOST: str
@@ -12,11 +9,4 @@ class Settings(BaseSettings):
     DB_PASS: str
     SECRET_KEY: str
     class Config:
-        env_file = ".env"
-
-
-DB_HOST_TEST = os.environ.get("DB_HOST_TEST")
-DB_PORT_TEST = os.environ.get("DB_PORT_TEST")
-DB_NAME_TEST = os.environ.get("DB_NAME_TEST")
-DB_USER_TEST = os.environ.get("DB_USER_TEST")
-DB_PASS_TEST = os.environ.get("DB_PASS_TEST")
+        env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")

@@ -2,6 +2,7 @@ import asyncio
 import sys
 from pathlib import Path
 from typing import AsyncGenerator
+import time
 
 import pytest
 import pytest_asyncio
@@ -10,45 +11,21 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
+from db_test import Base, DATABASE_URL, async_session_maker, create_initial_data
+from schemas.schemas import TweetCreateRequest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from main import app
-from db.database import Base
-from db.db_handlers import create_initial_data
-import config
+
 from routes.dependencies import get_db
+from db.database import settings
 
-DATABASE_URL = (f"postgresql+asyncpg://{config.DB_USER_TEST}:{config.DB_PASS_TEST}@"
-                f"{config.DB_HOST_TEST}:{config.DB_PORT_TEST}/{config.DB_NAME_TEST}")
-
-engine_test = create_async_engine(DATABASE_URL, poolclass=NullPool)
-
-# Создание асинхронной сессии
-async_session_maker = sessionmaker(
-    bind=engine_test, class_=AsyncSession, expire_on_commit=False, autoflush=False
-)
-Base.metadata.bind = engine_test
-
-
-async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
-    async with async_session_maker() as session:
-        yield session
-
-
-app.dependency_overrides[get_db] = override_get_db
-
-
-
-import time
 
 @pytest.fixture(scope="session", autouse=True)
 async def async_db_session():
     # Создание всех таблиц
     async with create_async_engine(DATABASE_URL, echo=True).begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-
-    # Даем базе данных время на инициализацию
-    time.sleep(1)
 
     # Создание сессии
     async with async_session_maker() as session:
@@ -67,6 +44,14 @@ def event_loop(request):
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
+
+
+@pytest.fixture(scope='session')
+async def created_tweet_id():
+    tweet_request = TweetCreateRequest(tweet_data="Test tweet", tweet_media_ids=[])
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        response = await ac.post("/api/tweets/", headers={"api-key": "test"}, json=tweet_request.dict())
+    return response.json()["tweet_id"]
 
 
 @pytest_asyncio.fixture
