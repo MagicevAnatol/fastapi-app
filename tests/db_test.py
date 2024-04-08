@@ -18,16 +18,10 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from main import app
-import config
+from config import settings
 from routes.dependencies import get_db
 
 
-@lru_cache
-def get_settings():
-    return config.Settings()
-
-
-settings = get_settings()
 
 DATABASE_URL = (
     f"postgresql+asyncpg://{settings.DB_USER}:{settings.DB_PASS}@"

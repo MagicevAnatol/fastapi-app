@@ -73,7 +73,11 @@ class Tweet(Base):
     tweet_data: str = Column(String(length=10000))
     tweet_media_ids: List[int] = Column(ARRAY(Integer), nullable=True)
     user_id: int = Column(Integer, ForeignKey("users.id"), index=True)
+
+    # Отношение твитов к пользователям
     user = relationship("User", back_populates="tweets")
+
+    # Отношение твитов к лайкам
     liked_by = relationship("User", secondary=likes_table, back_populates="likes")
 
 
