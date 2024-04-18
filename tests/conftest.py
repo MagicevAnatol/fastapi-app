@@ -6,30 +6,9 @@ import pytest
 import pytest_asyncio
 from httpx import AsyncClient
 
-from sqlalchemy.ext.asyncio import create_async_engine
-
-from db_test import Base, DATABASE_URL, async_session_maker, create_initial_data
-from schemas.schemas import TweetCreateRequest
-
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from main import app
-
-
-@pytest.fixture(scope="session", autouse=True)
-async def async_db_session():
-    # Создание всех таблиц
-    async with create_async_engine(DATABASE_URL, echo=True).begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    # Создание сессии
-    async with async_session_maker() as session:
-        # Вызов функции для создания начальных данных
-        await create_initial_data(session)
-        yield session
-
-    # Удаление всех таблиц после завершения тестов
-    async with create_async_engine(DATABASE_URL, echo=True).begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+from schemas.schemas import TweetCreateRequest
 
 
 @pytest.fixture(scope="session")
