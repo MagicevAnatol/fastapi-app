@@ -11,15 +11,13 @@ router = APIRouter(prefix="/api/tweets")
 
 @router.get(
     "/",
+    dependencies=[Depends(api_key_dependency)],
     response_model=TweetsResponseModel,
     tags=["tweets"],
     summary="Получить список твитов",
     description="Получает список всех твитов в ленте.",
 )
-async def get_tweets(
-    api_key: str = Depends(api_key_dependency), db: AsyncSession = Depends(get_db)
-):
-    user = await db_handlers.get_user_by_api(api_key, db)
+async def get_tweets(db: AsyncSession = Depends(get_db)):
     tweets = await db_handlers.get_tweet_feed(db)
     return {"result": True, "tweets": tweets}
 
@@ -36,7 +34,6 @@ async def create_tweet(
     api_key: str = Depends(api_key_dependency),
     db: AsyncSession = Depends(get_db),
 ):
-    # Создаем новый твит и сохраняем его в базу данных
     user = await db_handlers.get_user_by_api(api_key, db)
     tweet_id = await db_handlers.create_tweet(
         db, user.id, tweet_request.tweet_data, tweet_request.tweet_media_ids
